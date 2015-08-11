@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 @Entity
 @Table(name="new_item")
 public class NewItem {
@@ -17,14 +19,22 @@ public class NewItem {
 	private String summary;
 	@Column(name="target_url")
 	private String targetUrl;
-	
+	@Column(name="target_html")
+	private String targetHtml;
 	//创建时间
 	@Column(name="create_date")
+	@Temporal(TemporalType.TIMESTAMP)
 	private Date createDate;
 	
-	
+	public String getTargetHtml() {
+		return targetHtml;
+	}
+	public void setTargetHtml(String targetHtml) {
+		this.targetHtml = targetHtml;
+	}
 	//新闻发布时间
 	@Column(name="publish_date")
+	@Temporal(TemporalType.TIMESTAMP)
 	private Date publishDate;
 	
 	//新闻来源
