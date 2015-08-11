@@ -94,12 +94,5 @@ public class NewItem {
 	public void setCreateDate(Date createDate) {
 		this.createDate = createDate;
 	}
-	@Override
-	public String toString() {
-		return "NewItem [id=" + id + ", title=" + title + ", summary="
-				+ summary + ", targetUrl=" + targetUrl + ", createDate="
-				+ createDate + ", publishDate=" + publishDate + ", sourceName="
-				+ sourceName + "]";
-	}
 	
 }

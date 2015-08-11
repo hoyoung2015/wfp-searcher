@@ -16,6 +16,7 @@ public class APP {
 		Searcher searcher = context.getBean(Searcher.class);
 		searcher.addKeyword("武汉钢铁")
 		.addKeyword("绿色")
+		.addKeyword("环保")
 		.run();
 	}
 

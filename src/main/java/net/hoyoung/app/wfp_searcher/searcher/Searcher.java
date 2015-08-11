@@ -1,15 +1,19 @@
 package net.hoyoung.app.wfp_searcher.searcher;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import net.hoyoung.app.wfp_searcher.HtmlDownloader;
+import net.hoyoung.app.wfp_searcher.entity.NewItem;
 import net.hoyoung.app.wfp_searcher.savehandler.SaveHandler;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import us.codecraft.webmagic.selector.Html;
@@ -28,14 +32,17 @@ public class Searcher {
 	private static String BAIDU_NEWS_URL = "http://news.baidu.com/advanced_news.html";
 	private Set<String> keywords;
 	private WebClient webClient;
-	
+	private List<NewItem> newItemList;
 	@Autowired
-	private TaskExecutor taskExecutor;
+	private ThreadPoolTaskExecutor taskExecutor;
 	@Autowired
 	private SaveHandler saveHandler;
+	@Autowired
+	private HtmlDownloader htmlDownloader;
 	public Searcher() {
 		super();
 		keywords = new TreeSet<String>();
+		newItemList = new ArrayList<NewItem>();
 	}
 	public Searcher addKeyword(String key){
 		keywords.add(key);
@@ -68,14 +75,8 @@ public class Searcher {
 			
 			if(resultPage.getWebResponse().getStatusCode()==200){
 				String htmlContent = new String(resultPage.getWebResponse().getContentAsString());
-				final Html resultHtml = new Html(htmlContent);
-				//存储
-				taskExecutor.execute(new Runnable() {
-					@Override
-					public void run() {
-						saveHandler.save(resultHtml);
-					}
-				});
+				Html resultHtml = new Html(htmlContent);
+				newItemList.addAll(saveHandler.save(resultHtml));
 				boolean hasNextPage = true;
 				HtmlAnchor nextPageBtn = null;
 				do{
@@ -88,19 +89,21 @@ public class Searcher {
 					}
 					if(hasNextPage){//存在下一页，触发链接
 						resultPage = nextPageBtn.click();
-						htmlContent = new String(resultPage.getWebResponse().getContentAsString());
-						final Html nextHtml = new Html(htmlContent);
-						//存储
-						taskExecutor.execute(new Runnable() {
-							@Override
-							public void run() {
-								saveHandler.save(nextHtml);
-							}
-						});
+						if(resultPage.getWebResponse().getStatusCode()==200){
+							htmlContent = new String(resultPage.getWebResponse().getContentAsString());
+							final Html nextHtml = new Html(htmlContent);
+							newItemList.addAll(saveHandler.save(nextHtml));
+						}
 					}
 				}while(hasNextPage);
 			}
 			webClient.closeAllWindows();
+			//开始爬取新闻内容
+			for(NewItem news : newItemList){
+				htmlDownloader.addUrl(news.getTargetUrl());
+//				break;
+			}
+			htmlDownloader.run();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

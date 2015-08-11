@@ -2,6 +2,7 @@ package net.hoyoung.app.wfp_searcher.savehandler.impl;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -21,8 +22,9 @@ public class DbSaveHandler implements SaveHandler {
 	@Autowired
 	private NewItemDao newItemDao;
 	@Override
-	public void save(Html html) {
+	public List<NewItem> save(Html html) {
 		Html resultHtml = html;
+		List<NewItem> list = new ArrayList<NewItem>();
 		//开线程来保存
 		
 		Selectable selectable = resultHtml.xpath("//div[@class='result']");
@@ -45,7 +47,6 @@ public class DbSaveHandler implements SaveHandler {
 				e.printStackTrace();
 			}
 			String summary = sumSele.get().replaceAll("(<span.*/span>)|(<p.*/p>)|(</?div[^>]*>)|(</?em[^>]*>)", "");
-			
 			NewItem newItem = new NewItem();
 			newItem.setCreateDate(new Date());
 			newItem.setPublishDate(publishDate);
@@ -53,9 +54,10 @@ public class DbSaveHandler implements SaveHandler {
 			newItem.setTargetUrl(targetUrl);
 			newItem.setTitle(title);
 			newItem.setSummary(summary);
-			newItem.setTargetHtml(resultHtml.get());
 			newItemDao.save(newItem);
+			list.add(newItem);
 		}
+		return list;
 	}
 
 }

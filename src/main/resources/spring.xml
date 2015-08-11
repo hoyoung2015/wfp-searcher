@@ -77,7 +77,7 @@
   </aop:config>
   <!--// 事务配置 -->
   <!-- 线程池 -->
-  <bean id ="taskExecutor"  class ="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" > 
+  <bean id ="threadPoolTaskExecutor"  class ="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" > 
      <property name ="corePoolSize" value ="5" /> 
     <property name ="keepAliveSeconds" value ="300" /> 
     <property name ="maxPoolSize" value ="100" /> 
