@@ -1,16 +1,18 @@
-package net.hoyoung.app.wfp_searcher;
+package net.hoyoung.app.wfp_searcher.savehandler.impl;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import net.hoyoung.app.wfp_searcher.dao.NewItemDao;
+import net.hoyoung.app.wfp_searcher.entity.NewItem;
+import net.hoyoung.app.wfp_searcher.savehandler.SaveHandler;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import net.hoyoung.app.wfp_searcher.dao.NewItemDao;
-import net.hoyoung.app.wfp_searcher.entity.NewItem;
 import us.codecraft.webmagic.selector.Html;
 import us.codecraft.webmagic.selector.Selectable;
 @Component
@@ -51,6 +53,7 @@ public class DbSaveHandler implements SaveHandler {
 			newItem.setTargetUrl(targetUrl);
 			newItem.setTitle(title);
 			newItem.setSummary(summary);
+			newItem.setTargetHtml(resultHtml.get());
 			newItemDao.save(newItem);
 		}
 	}

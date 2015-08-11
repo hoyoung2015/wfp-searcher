@@ -1,4 +1,4 @@
-package net.hoyoung.app.wfp_searcher;
+package net.hoyoung.app.wfp_searcher.savehandler;
 
 import us.codecraft.webmagic.selector.Html;
 

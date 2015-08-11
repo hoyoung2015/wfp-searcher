@@ -1,18 +1,23 @@
-package net.hoyoung.app.wfp_searcher;
+package net.hoyoung.app.wfp_searcher.searcher;
 
 import java.util.Set;
 import java.util.TreeSet;
+
+import net.hoyoung.app.wfp_searcher.savehandler.SaveHandler;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 
 import us.codecraft.webmagic.selector.Html;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -23,6 +28,9 @@ public class Searcher {
 	private static String BAIDU_NEWS_URL = "http://news.baidu.com/advanced_news.html";
 	private Set<String> keywords;
 	private WebClient webClient;
+	
+	@Autowired
+	private TaskExecutor taskExecutor;
 	@Autowired
 	private SaveHandler saveHandler;
 	public Searcher() {
@@ -42,6 +50,9 @@ public class Searcher {
 		}
 		logger.info("搜索关键字："+query);
 		webClient = new WebClient(BrowserVersion.CHROME);
+		webClient.getOptions().setCssEnabled(false);
+		webClient.getOptions().setJavaScriptEnabled(false);
+		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		try {
 			HtmlPage htmlPage = webClient.getPage(BAIDU_NEWS_URL);
 			HtmlForm form = htmlPage.getFormByName("f");
@@ -56,36 +67,38 @@ public class Searcher {
 			HtmlPage resultPage = submitButton.click();
 			
 			if(resultPage.getWebResponse().getStatusCode()==200){
-				Html resultHtml = new Html(resultPage.getWebResponse().getContentAsString());
-				//开线程来保存
-				saveHandler.save(resultHtml);
-				
-//				Selectable selectable = resultHtml.xpath("//div[@class='result']");
-//				List<Selectable> nodes = selectable.nodes();
-//				for (Selectable sele : nodes) {
-//					Selectable titleSele = sele.xpath("//h3[@class='c-title']/a");
-//					String title = titleSele.get().replaceAll("(</?em[^>]*>)|(</?a[^>]*>)", "");
-//					String targetUrl = titleSele.xpath("//*/@href").get();
-//					Selectable sumSele = sele.xpath("//div[@class='c-summary']");
-//					String sourceAndDate = sumSele.xpath("//p/text()").get();
-//					
-//					String[] ss = sourceAndDate.split("\\u00A0\\u00A0");
-//					String sourceName = ss[0];
-//					
-//					SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日 HH:mm");
-//					Date publishDate = sdf.parse(ss[1]);
-//					
-//					String summary = sumSele.get().replaceAll("(<span.*/span>)|(<p.*/p>)|(</?div[^>]*>)|(</?em[^>]*>)", "");
-//					
-//					NewItem newItem = new NewItem();
-//					newItem.setCreateDate(new Date());
-//					newItem.setPublishDate(publishDate);
-//					newItem.setSourceName(sourceName);
-//					newItem.setTargetUrl(targetUrl);
-//					newItem.setTitle(title);
-//					newItem.setSummary(summary);
-//					
-//				}
+				String htmlContent = new String(resultPage.getWebResponse().getContentAsString());
+				final Html resultHtml = new Html(htmlContent);
+				//存储
+				taskExecutor.execute(new Runnable() {
+					@Override
+					public void run() {
+						saveHandler.save(resultHtml);
+					}
+				});
+				boolean hasNextPage = true;
+				HtmlAnchor nextPageBtn = null;
+				do{
+					try{
+						//查找“下一页”的按钮
+						nextPageBtn = resultPage.getAnchorByText("下一页>");
+					}catch(ElementNotFoundException e){
+						logger.warn("没有下一页了");
+						hasNextPage = false;
+					}
+					if(hasNextPage){//存在下一页，触发链接
+						resultPage = nextPageBtn.click();
+						htmlContent = new String(resultPage.getWebResponse().getContentAsString());
+						final Html nextHtml = new Html(htmlContent);
+						//存储
+						taskExecutor.execute(new Runnable() {
+							@Override
+							public void run() {
+								saveHandler.save(nextHtml);
+							}
+						});
+					}
+				}while(hasNextPage);
 			}
 			webClient.closeAllWindows();
 		} catch (Exception e) {

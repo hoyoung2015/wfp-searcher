@@ -2,25 +2,37 @@ package net.hoyoung.app.wfp_searcher.entity;
 
 import java.util.Date;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.hibernate.annotations.Index;
 @Entity
 @Table(name="new_item")
 public class NewItem {
 	@Id
 	@GeneratedValue
 	private int id;
+	
 	private String title;
+	
+	@Column(columnDefinition="TEXT")
 	private String summary;
+	
 	@Column(name="target_url")
 	private String targetUrl;
-	@Column(name="target_html")
+	
+	@Basic(fetch=FetchType.LAZY)
+	@Column(name="target_html",length=16777215)
+	@Index(name="html_index")//创建索引
 	private String targetHtml;
+	
 	//创建时间
 	@Column(name="create_date")
 	@Temporal(TemporalType.TIMESTAMP)

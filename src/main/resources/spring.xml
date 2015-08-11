@@ -17,6 +17,8 @@
 		destroy-method="close">
 		<property name="driverClassName" value="${db.driver_class}" />
 		<property name="url" value="${db.url}" />
+		<property name="username" value="${db.username}" />
+		<property name="password" value="${db.password}" />
 		<property name="initialSize" value="${db.initialSize}" />
 		<property name="maxActive" value="${db.maxActive}" />
 		<property name="maxIdle" value="${db.maxIdle}" />
@@ -74,4 +76,11 @@
     <aop:advisor pointcut-ref="transactionPointcut" advice-ref="transactionAdvice" />
   </aop:config>
   <!--// 事务配置 -->
+  <!-- 线程池 -->
+  <bean id ="taskExecutor"  class ="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor" > 
+     <property name ="corePoolSize" value ="5" /> 
+    <property name ="keepAliveSeconds" value ="300" /> 
+    <property name ="maxPoolSize" value ="100" /> 
+    <property name ="queueCapacity" value ="20" /> 
+  </bean>
 </beans>
